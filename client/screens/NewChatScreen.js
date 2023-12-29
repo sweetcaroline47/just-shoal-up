@@ -1,0 +1,174 @@
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  TextInput,
+  ActivityIndicator,
+  FlatList,
+} from "react-native";
+import colors from "../../constants/colors";
+import { HeaderButtons, Item } from "react-navigation-header-buttons";
+import CustomHeaderButton from "../components/CustomHeaderButton";
+import PageContainer from "../components/PageContainer.js";
+import { Ionicons } from "@expo/vector-icons";
+import { searchUsers } from "../utils/actions/userActions.js";
+import DataItem from "../components/DataItem.js";
+import { useDispatch, useSelector } from "react-redux";
+import { setStoredUsers } from "../store/userSlice.js";
+
+const NewChatScreen = (props) => {
+
+const dispatch = useDispatch();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState();
+  const [noResultsFound, setNoResultsFound] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const userData = useSelector((state) => state.auth.userData);
+
+  useEffect(() => {
+    props.navigation.setOptions({
+      headerLeft: () => {
+        return (
+          <HeaderButtons HeaderButtonComponent={CustomHeaderButton}>
+            <Item
+              title="Close"
+              onPress={() => {
+                props.navigation.goBack();
+              }}
+            />
+          </HeaderButtons>
+        );
+      },
+      headerTitle: "New Chat",
+    });
+  }, []);
+
+  useEffect(() => {
+    const delaySearch = setTimeout(async () => {
+      if (!searchTerm || searchTerm === "") {
+        setUsers();
+        setNoResultsFound(false);
+        return;
+      }
+      setIsLoading(true);
+
+      // search users
+      const userResult = await searchUsers(searchTerm);
+      delete userResult[userData.userId];
+      setUsers(userResult);
+      if (Object.keys(userResult).length === 0) {
+        setNoResultsFound(true);
+      } else {
+        setNoResultsFound(false);
+        dispatch(setStoredUsers({newUsers: userResult}));
+      }
+
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(delaySearch);
+  }, [searchTerm]);
+
+  // press to go to the chat list and find this user in the chat
+  const userPressed = (userId) => {
+    props.navigation.navigate("ChatList", { selectedUserId: userId });
+  };
+
+  return (
+    <PageContainer>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={24} color={colors.orange} />
+        <TextInput
+          placeholder="Search"
+          style={styles.searchBox}
+          onChangeText={(text) => setSearchTerm(text)}
+        />
+      </View>
+
+      {!isLoading && !users && (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Ionicons
+            name="people-sharp"
+            size={60}
+            color={colors.pink_white}
+            style={styles.noResultsIcon}
+          />
+          <Text style={styles.noResultsText}>Enter a name to search</Text>
+        </View>
+      )}
+      {!isLoading && noResultsFound && (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Ionicons
+            name="sad-outline"
+            size={60}
+            color={colors.pink_white}
+            style={styles.noResultsIcon}
+          />
+          <Text style={styles.noResultsText}>No users found</Text>
+        </View>
+      )}
+      {isLoading && (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size={"large"} color={colors.pink_white} />
+        </View>
+      )}
+      {!isLoading && !noResultsFound && users && (
+        <FlatList
+          data={Object.keys(users)}
+          renderItem={(itemData) => {
+            const userId = itemData.item;
+            const userData = users[userId];
+
+            return (
+              <DataItem
+                title={`${userData.fullName}`}
+                subtitle={`${userData.type}`}
+                image={userData.profilePicture}
+                onPress={() => userPressed(userId)}
+              />
+            );
+          }}
+        />
+      )}
+    </PageContainer>
+  );
+};
+
+const styles = StyleSheet.create({
+  searchContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.pink_white,
+    alignItems: "center",
+    height: 40,
+    marginVertical: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+  searchBox: {
+    marginLeft: 8,
+    fontSize: 16,
+    width: "auto",
+    fontFamily: "Poppins_regular",
+  },
+  noResultsIcon: {
+    marginBottom: 20,
+  },
+  noResultsText: {
+    color: colors.orange,
+    fontFamily: "Poppins_semibolditalic",
+    letterSpacing: 0.3,
+    fontSize: 18,
+  },
+});
+
+export default NewChatScreen;

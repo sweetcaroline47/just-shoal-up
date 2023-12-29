@@ -1,43 +1,104 @@
-import { View, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import colors from "../../constants/colors";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { SelectList } from "react-native-dropdown-select-list";
+import { Ionicons } from '@expo/vector-icons';
 
 const Input = (props) => {
-  const onChangeText = (text) => {
-    props.onInputChanged(props.id, text)};
   
+  // Add initial value
+  const [value, setValue] = useState(props.initialValue);
+  
+  const onChangeText = (text) => {
+    setValue(text);
+    props.onInputChanged(props.id, text);
+  };
+
+  // CY EDIT: Add a handler for dropdown value changes
+  const [selected, setSelected] = useState(props.initialValue);
+  const data = props.selections;
+
+  const onChangeSelection = (text) => {
+    setSelected(text);
+    props.onInputChanged(props.id, text);
+  }
+
+  // CY EDIT: Add password protection
   const togglePasswordVisibility = () => {
     setIsPasswordVisible((prevState) => !prevState); // Toggle password visibility state
   };
   const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State to track password visibility
   const isPasswordInput = props.secureTextEntry;
-  
+
   return (
     <View style={{ ...styles.container, ...props.style }}>
       <Text style={styles.inputLabel}>{props.label}</Text>
-      <View style={styles.inputContainer}>
-        {props.icon && (
-          <props.iconPack name={props.icon} size={24} style={styles.icon} />
-        )}
-        <TextInput 
-        {...props}
-        style={styles.textInput} 
-        placeholder={props.placeholder}
-        onChangeText={onChangeText}
-        secureTextEntry={isPasswordInput ? !isPasswordVisible : false} // Toggle secureTextEntry based on visibility state
-        />
-        
-        
-        {isPasswordInput && ( // Show toggle icon only if secureTextEntry is true
-          <TouchableOpacity onPress={togglePasswordVisibility}>
-            <props.iconPack
-              name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
-              size={24}
-              style={styles.icon}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
+
+      {!props.isDropDown && (
+        <View style={styles.inputContainer}>
+          {props.icon && (
+            <props.iconPack name={props.icon} size={24} style={styles.icon} />
+          )}
+          <TextInput
+            {...props}
+            style={styles.textInput}
+            placeholder={props.placeholder}
+            onChangeText={onChangeText}
+            secureTextEntry={isPasswordInput ? !isPasswordVisible : false} // Toggle secureTextEntry based on visibility state
+            value={value}
+          />
+
+          {isPasswordInput && ( // Show toggle icon only if secureTextEntry is true
+            <TouchableOpacity onPress={togglePasswordVisibility}>
+              <props.iconPack
+                name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
+                size={24}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {props.isDropDown && (
+        <View style={{ flexDirection: "column" }}>
+          {props.icon && (
+            <props.iconPack name={props.icon} size={24} style={styles.icon} />
+          )}
+          <SelectList
+            onSelect={() => onChangeSelection(selected)}
+            setSelected={(val) => setSelected(val)}
+            data={data}
+            save="value"
+            placeholder={props.placeholder}
+            boxStyles={{
+              width: "auto",
+              borderColor: colors.pink_white,
+              backgroundColor: colors.pink_white,
+            }}
+            inputStyles={{
+              fontFamily: "Poppins_regular",
+              fontSize: 16,
+              color: colors.chinese_black,
+            }}
+            dropdownStyles={{
+              backgroundColor: colors.pink_white,
+              borderColor: colors.orange,
+            }}
+            dropdownItemStyles={{ fontFamily: "Poppins_regular", fontSize: 16 }}
+            arrowicon={
+              <Ionicons name="chevron-down-outline" size={24} color={colors.chinese_grey} />
+            }
+            searchicon={<Ionicons name="search-outline" size={24} color={colors.chinese_grey} />}
+          />
+        </View>
+      )}
 
       {props.errorText && (
         <View style={styles.errorContainer}>
@@ -64,7 +125,7 @@ const styles = StyleSheet.create({
     width: "auto",
     backgroundColor: colors.pink_white,
     paddingHorizontal: 10,
-    paddingVertical: 15,
+    paddingVertical: 12,
     borderRadius: 10,
     alignItems: "center",
   },

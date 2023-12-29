@@ -1,4 +1,4 @@
-import { validateEmail, validateString, validatePassword } from "../validationConstraints";
+import { validateEmail, validateString, validatePassword, validateSelection } from "../validationConstraints";
 
 export const validateInput = (inputId, inputValue) => {
   if (inputId === "fullName") {
@@ -7,5 +7,7 @@ export const validateInput = (inputId, inputValue) => {
     return (validateEmail(inputId, inputValue));
   } else if (inputId === "password") {
     return (validatePassword(inputId, inputValue));
+  } else if (inputId === "age" || inputId === "currentLevel" || inputId === "idealLevel" || inputId === "type") {
+    return (validateSelection(inputId, inputValue));
   }
 };

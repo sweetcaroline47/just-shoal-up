@@ -15,6 +15,10 @@ import AppNavigator from "./client/navigation/AppNavigator";
 import { Provider } from "react-redux";
 import { store } from "./client/store/store";
 
+// force logout temp
+import AsyncStorage from "@react-native-async-storage/async-storage";
+// AsyncStorage.clear();
+
 // Main APP
 export default function App() {
   // load fonts
@@ -52,9 +56,11 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider style={styles.container}>
-      <AppNavigator />
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <SafeAreaProvider style={styles.container}>
+        <AppNavigator />
+      </SafeAreaProvider>
+    </Provider>
   );
 }
 

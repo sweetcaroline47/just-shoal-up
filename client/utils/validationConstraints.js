@@ -52,3 +52,12 @@ export const validatePassword = (id, value) => {
 
     return validationResult && validationResult[id];
 }
+export const validateSelection = (id, value) => {
+    const constraints = { 
+        presence: { allowEmpty: false }
+    };
+
+    const validationResult = validate({ [id]: value }, { [id]: constraints });
+
+    return validationResult && validationResult[id];
+}

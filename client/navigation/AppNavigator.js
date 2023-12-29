@@ -5,10 +5,13 @@ import { NavigationContainer } from "@react-navigation/native";
 import MainNavigator from "./MainNavigator";
 import ChatSettingsScreen from "../screens/ChatSettingsScreen";
 import AuthScreen from "../screens/AuthScreen";
+import { useSelector } from "react-redux";
+import StartScreen from "../screens/StartScreen";
 
 // multiple navigators depending on whether the user is logged in, etc.
 const AppNavigator = (props) => {
-  const isAuth = false;
+  const isAuth = useSelector(state => state.auth.token !== null && state.auth.token !== "");
+  const didTryAutoLogin = useSelector(state => state.auth.didTryAutoLogin);
 
 
 
@@ -17,7 +20,8 @@ const AppNavigator = (props) => {
   return (
     <NavigationContainer>
       {isAuth && <MainNavigator/>}
-      {!isAuth && <AuthScreen/>}
+      {!isAuth && !didTryAutoLogin && <StartScreen/>}
+      {!isAuth && didTryAutoLogin && <AuthScreen/>}
       
     </NavigationContainer>
   );

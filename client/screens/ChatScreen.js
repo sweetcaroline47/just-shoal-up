@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -10,29 +10,74 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import backgroundImage from "../assets/images/ChatBackground_5.png";
+import backgroundImage from "../assets/images/ChatBackground_0.png";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../../constants/colors";
+import { useSelector } from "react-redux";
+import PageContainer from "../components/PageContainer";
+import Bubble from "../components/Bubble";
+import { createChat } from "../utils/actions/chatActions";
 
 const ChatScreen = (props) => {
-  const [messageText, setMessageText] = useState("");
+  // store all the users you have searched in the state
+  const userData = useSelector((state) => state.auth.userData);
+  const storedUsers = useSelector((state) => state.users.storedUsers);
+  const [chatUsers, setChatUsers] = useState([]);
 
-  const sendMessage = useCallback(() => {
+  const [messageText, setMessageText] = useState("");
+  const [chatId, setChatId] = useState(props.route?.params?.chatId);
+
+  const chatData = props.route?.params?.newChatData;
+  const getChatTitleFromName = () => {
+    const otherUserId = chatUsers.find((uid) => uid !== userData.userId);
+    const otherUserData = storedUsers[otherUserId];
+    return otherUserData && `${otherUserData.fullName}`;
+  };
+
+  useEffect(() => {
+    props.navigation.setOptions({
+      headerTitle: getChatTitleFromName(),
+      headerTitleStyle: {
+        fontFamily: "Poppins_semibold",
+        color: colors.chinese_black,
+        letterSpacing: 0.3,
+      },
+    });
+
+    setChatUsers(chatData.users);
+  }, [chatUsers]);
+
+  const sendMessage = useCallback( async () => {
+    try {
+      let id = chatId;
+      if (!id){
+        // no chat id. create the chat
+        id = await createChat(userData.userId, props.route.params.newChatData);
+        setChatId(id);
+      }
+    } catch (error) {
+
+    }
+
     setMessageText("");
-  }, [messageText]);
+  }, [messageText, chatId]);
 
   return (
     <SafeAreaView edges={["right", "left", "bottom"]} style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.screen}
-        behavior={ Platform.OS === "ios" ? "padding": undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={100}
       >
         <ImageBackground
           source={backgroundImage}
           style={styles.backgroundImage}
-        ></ImageBackground>
+        >
+          <PageContainer style={{ backgroundColor: "transparent" }}>
+            {!chatId && <Bubble text="New chat! Say hi :)" type="system" />}
+          </PageContainer>
+        </ImageBackground>
 
         <View style={styles.inputContainer}>
           <TouchableOpacity
