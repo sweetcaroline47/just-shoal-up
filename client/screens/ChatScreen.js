@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,6 +9,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  FlatList,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import backgroundImage from "../assets/images/ChatBackground_0.png";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,18 +20,54 @@ import colors from "../../constants/colors";
 import { useSelector } from "react-redux";
 import PageContainer from "../components/PageContainer";
 import Bubble from "../components/Bubble";
-import { createChat } from "../utils/actions/chatActions";
+import {
+  createChat,
+  sendImage,
+  sendTextMessage,
+} from "../utils/actions/chatActions";
+import ReplyTo from "../components/ReplyTo";
+import {
+  launchImagePicker,
+  openCamera,
+  uploadImageAsync,
+} from "../utils/imagePickerHelper";
+import AwesomeAlert from "react-native-awesome-alerts";
 
 const ChatScreen = (props) => {
+  const [chatUsers, setChatUsers] = useState([]);
+  const [messageText, setMessageText] = useState("");
+  const [chatId, setChatId] = useState(props.route?.params?.chatId);
+  const [errorBannerText, setErrorBannerText] = useState("");
+  const [replyingTo, setReplyingTo] = useState();
+  const [tempImageUri, setTempImageUri] = useState("");
+  const [isLoading, setIsLoadning] = useState(false);
+
+  // to show the latest text
+  const flatList = useRef();
+
   // store all the users you have searched in the state
   const userData = useSelector((state) => state.auth.userData);
   const storedUsers = useSelector((state) => state.users.storedUsers);
-  const [chatUsers, setChatUsers] = useState([]);
+  const storedChats = useSelector((state) => state.chats.chatsData);
+  const chatMessages = useSelector((state) => {
+    if (!chatId) return [];
+    const chatMessagesData = state.messages.messagesData[chatId];
+    if (!chatMessagesData) return [];
+    const messageList = [];
+    for (const key in chatMessagesData) {
+      const message = chatMessagesData[key];
+      messageList.push({
+        key: key,
+        ...message,
+      });
+    }
+    return messageList;
+  });
 
-  const [messageText, setMessageText] = useState("");
-  const [chatId, setChatId] = useState(props.route?.params?.chatId);
+  // store previous chat and new chat data into chatData
+  const chatData =
+    (chatId && storedChats[chatId]) || props.route?.params?.newChatData;
 
-  const chatData = props.route?.params?.newChatData;
   const getChatTitleFromName = () => {
     const otherUserId = chatUsers.find((uid) => uid !== userData.userId);
     const otherUserData = storedUsers[otherUserId];
@@ -48,20 +87,88 @@ const ChatScreen = (props) => {
     setChatUsers(chatData.users);
   }, [chatUsers]);
 
-  const sendMessage = useCallback( async () => {
+  // send message in 1-1 chat
+  const sendMessage = useCallback(async () => {
     try {
+      // CY EDIT: AVOID SENDING EMPTY MESSAGES
+      if (!messageText.trim()) {
+        // If the message text is empty or contains only whitespace characters
+        return;
+      }
+
       let id = chatId;
-      if (!id){
+      if (!id) {
         // no chat id. create the chat
         id = await createChat(userData.userId, props.route.params.newChatData);
         setChatId(id);
       }
+
+      if (messageText.trim()) {
+        // send a text message
+        await sendTextMessage(
+          id,
+          userData.userId,
+          messageText,
+          replyingTo && replyingTo.key
+        );
+        setMessageText("");
+        setReplyingTo(null);
+      }
     } catch (error) {
-
+      console.log(error);
+      setErrorBannerText("Message failed to send");
+      setTimeout(() => setErrorBannerText(""), 5000);
     }
-
-    setMessageText("");
   }, [messageText, chatId]);
+
+  const pickImage = useCallback(async () => {
+    try {
+      const tempUri = await launchImagePicker();
+      if (!tempUri) return;
+      setTempImageUri(tempUri);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [tempImageUri]);
+
+  const takePhoto = useCallback(async () => {
+    try {
+      const tempUri = await openCamera();
+      if (!tempUri) return;
+      setTempImageUri(tempUri);
+    } catch (error) {
+      console.log(error);
+    }
+  }, [tempImageUri]);
+
+  const uploadImage = useCallback(async () => {
+    setIsLoadning(true);
+    try {
+      let id = chatId;
+      if (!id) {
+        // no chat id. create the chat
+        id = await createChat(userData.userId, props.route.params.newChatData);
+        setChatId(id);
+      }
+
+      const uploadUrl = await uploadImageAsync(tempImageUri, true);
+      setIsLoadning(false);
+
+      // send image
+      sendImage(
+        id,
+        userData.userId,
+        messageText,
+        uploadUrl,
+        replyingTo && replyingTo.key
+      );
+
+      setTempImageUri("");
+    } catch (error) {
+      console.log(error);
+      setIsLoadning(false);
+    }
+  }, [isLoading, tempImageUri]);
 
   return (
     <SafeAreaView edges={["right", "left", "bottom"]} style={styles.container}>
@@ -76,16 +183,55 @@ const ChatScreen = (props) => {
         >
           <PageContainer style={{ backgroundColor: "transparent" }}>
             {!chatId && <Bubble text="New chat! Say hi :)" type="system" />}
+            {errorBannerText !== "" && (
+              <Bubble text={errorBannerText} type="error" />
+            )}
+            {chatId && (
+              <FlatList
+                ref={(ref) => flatList.current = ref }
+                onContentSizeChange={()=> flatList.current.scrollToEnd({ animated: false })}
+                onLayout={()=> flatList.current.scrollToEnd({ animated: false })}
+                data={chatMessages}
+                renderItem={(itemData) => {
+                  const message = itemData.item;
+                  const isOwnMessage = message.sentBy === userData.userId;
+                  const messageType = isOwnMessage
+                    ? "myMessage"
+                    : "theirMessage";
+                  return (
+                    <Bubble
+                      type={messageType}
+                      text={message.text}
+                      messageId={message.key}
+                      userId={userData.userId}
+                      chatId={chatId}
+                      date={message.sentAt}
+                      setReply={() => setReplyingTo(message)}
+                      replyingTo={
+                        message.replyTo &&
+                        chatMessages.find((i) => i.key === message.replyTo)
+                      }
+                      imageUrl={message.imageUrl}
+                    />
+                  );
+                }}
+              />
+            )}
           </PageContainer>
+
+          {replyingTo && (
+            <ReplyTo
+              text={replyingTo.text}
+              user={storedUsers[replyingTo.sentBy]}
+              onCancel={() => setReplyingTo(null)}
+            />
+          )}
         </ImageBackground>
 
         <View style={styles.inputContainer}>
-          <TouchableOpacity
-            style={styles.mediaButton}
-            onPress={() => console.log("touched")}
-          >
+          <TouchableOpacity style={styles.mediaButton} onPress={pickImage}>
             <Ionicons
-              name="ios-add-circle-outline"
+              name="add-circle-outline"
               size={32}
               color={colors.orange}
             />
@@ -96,13 +242,12 @@ const ChatScreen = (props) => {
             value={messageText}
             onChangeText={(text) => setMessageText(text)}
             onSubmitEditing={sendMessage}
+            multiline={true}
+            textAlignVertical={"auto"}
           />
 
           {messageText === "" && (
-            <TouchableOpacity
-              style={styles.mediaButton}
-              onPress={() => console.log("touched")}
-            >
+            <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
               <Ionicons
                 name="md-camera-outline"
                 size={32}
@@ -123,6 +268,46 @@ const ChatScreen = (props) => {
               />
             </TouchableOpacity>
           )}
+
+          <AwesomeAlert
+            show={tempImageUri !== ""}
+            title="Send image?"
+            closeOnTouchOutside={true}
+            closeOnHardwareBackPress={false}
+            showCancelButton={true}
+            showConfirmButton={true}
+            cancelButtonStyle={styles.popupButtonStyle}
+            confirmButtonStyle={styles.popupButtonStyle}
+            cancelText="Cancel"
+            confirmText="Send"
+            cancelButtonTextStyle={{
+              fontFamily: "Poppins_regular",
+              letterSpacing: 0.3,
+            }}
+            confirmButtonTextStyle={{
+              fontFamily: "Poppins_regular",
+              letterSpacing: 0.3,
+            }}
+            confirmButtonColor={colors.orange}
+            cancelButtonColor={colors.chinese_red}
+            titleStyle={styles.popupTitleStyle}
+            onCancelPressed={() => setTempImageUri("")}
+            onConfirmPressed={uploadImage}
+            onDismiss={() => setTempImageUri("")}
+            customView={
+              <View>
+                {isLoading && (
+                  <ActivityIndicator size={"small"} color={colors.orange} />
+                )}
+                {!isLoading && tempImageUri !== "" && (
+                  <Image
+                    source={{ uri: tempImageUri }}
+                    style={{ width: 200, height: 200 }}
+                  />
+                )}
+              </View>
+            }
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -145,21 +330,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingVertical: 8,
     paddingHorizontal: 10,
-    height: 50,
+    height: "auto",
   },
   textBox: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 50,
+    borderRadius: 10,
     borderColor: colors.pink_2,
     marginHorizontal: 15,
     paddingHorizontal: 12,
     flexDirection: "row",
+    fontSize: 16,
+    fontFamily: "Poppins_regular",
+    letterSpacing: 0.3,
   },
   mediaButton: {
     alignItems: "center",
     justifyContent: "center",
     width: 35,
+  },
+  popupButtonStyle: {
+    width: 70,
+    marginHorizontal: 10,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  popupTitleStyle: {
+    fontFamily: "Poppins_regular",
+    letterSpacing: 0.3,
+    color: colors.chinese_black,
+    marginBottom: 10,
   },
 });
 

@@ -7,4 +7,5 @@ export default {
     chinese_red: "#cd071e",
     chinese_black: "#141414",
     chinese_grey: "#9D9C9C",
+    light_orange: '#f98a07'
 }

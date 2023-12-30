@@ -19,6 +19,9 @@ import { store } from "./client/store/store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // AsyncStorage.clear();
 
+// import message popup menu
+import { MenuProvider } from "react-native-popup-menu";
+
 // Main APP
 export default function App() {
   // load fonts
@@ -58,7 +61,9 @@ export default function App() {
   return (
     <Provider store={store}>
       <SafeAreaProvider style={styles.container}>
-        <AppNavigator />
+        <MenuProvider>
+          <AppNavigator />
+        </MenuProvider>
       </SafeAreaProvider>
     </Provider>
   );

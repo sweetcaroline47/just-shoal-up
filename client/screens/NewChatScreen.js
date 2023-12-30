@@ -7,6 +7,8 @@ import {
   TextInput,
   ActivityIndicator,
   FlatList,
+  ScrollView,
+  KeyboardAvoidingView,
 } from "react-native";
 import colors from "../../constants/colors";
 import { HeaderButtons, Item } from "react-navigation-header-buttons";
@@ -19,8 +21,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setStoredUsers } from "../store/userSlice.js";
 
 const NewChatScreen = (props) => {
-
-const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState();
@@ -64,7 +65,7 @@ const dispatch = useDispatch();
         setNoResultsFound(true);
       } else {
         setNoResultsFound(false);
-        dispatch(setStoredUsers({newUsers: userResult}));
+        dispatch(setStoredUsers({ newUsers: userResult }));
       }
 
       setIsLoading(false);
@@ -79,66 +80,78 @@ const dispatch = useDispatch();
 
   return (
     <PageContainer>
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={24} color={colors.orange} />
-        <TextInput
-          placeholder="Search"
-          style={styles.searchBox}
-          onChangeText={(text) => setSearchTerm(text)}
-        />
-      </View>
-
-      {!isLoading && !users && (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Ionicons
-            name="people-sharp"
-            size={60}
-            color={colors.pink_white}
-            style={styles.noResultsIcon}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={24} color={colors.orange} />
+          <TextInput
+            placeholder="Search names"
+            style={styles.searchBox}
+            onChangeText={(text) => setSearchTerm(text)}
           />
-          <Text style={styles.noResultsText}>Enter a name to search</Text>
         </View>
-      )}
-      {!isLoading && noResultsFound && (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Ionicons
-            name="sad-outline"
-            size={60}
-            color={colors.pink_white}
-            style={styles.noResultsIcon}
-          />
-          <Text style={styles.noResultsText}>No users found</Text>
-        </View>
-      )}
-      {isLoading && (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size={"large"} color={colors.pink_white} />
-        </View>
-      )}
-      {!isLoading && !noResultsFound && users && (
-        <FlatList
-          data={Object.keys(users)}
-          renderItem={(itemData) => {
-            const userId = itemData.item;
-            const userData = users[userId];
 
-            return (
-              <DataItem
-                title={`${userData.fullName}`}
-                subtitle={`${userData.type}`}
-                image={userData.profilePicture}
-                onPress={() => userPressed(userId)}
-              />
-            );
-          }}
-        />
-      )}
+        {!isLoading && !users && (
+          <View
+            style={{
+              flex: 1,
+              // CY EDIT: justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons
+              name="people-sharp"
+              size={60}
+              color={colors.pink_white}
+              style={styles.noResultsIcon}
+            />
+            <Text style={styles.noResultsText}>Search for a member</Text>
+          </View>
+        )}
+        {!isLoading && noResultsFound && (
+          <View
+            style={{
+              flex: 1,
+              // CY EDIT: justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons
+              name="sad-outline"
+              size={60}
+              color={colors.pink_white}
+              style={styles.noResultsIcon}
+            />
+            <Text style={styles.noResultsText}>No users found</Text>
+          </View>
+        )}
+        {isLoading && (
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <ActivityIndicator size={"large"} color={colors.pink_white} />
+          </View>
+        )}
+        {!isLoading && !noResultsFound && users && (
+          <FlatList
+            data={Object.keys(users)}
+            renderItem={(itemData) => {
+              const userId = itemData.item;
+              const userData = users[userId];
+
+              return (
+                <DataItem
+                  title={`${userData.fullName}`}
+                  subtitle={`${userData.type}`}
+                  image={userData.profilePicture}
+                  onPress={() => userPressed(userId)}
+                />
+              );
+            }}
+          />
+        )}
     </PageContainer>
   );
 };
@@ -147,6 +160,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     backgroundColor: colors.pink_white,
+    justifyContent: "center",
     alignItems: "center",
     height: 40,
     marginVertical: 12,
@@ -159,9 +173,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: "auto",
     fontFamily: "Poppins_regular",
+    justifyContent: "center",
+    alignItems: "center",
   },
   noResultsIcon: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   noResultsText: {
     color: colors.orange,
