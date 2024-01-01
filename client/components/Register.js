@@ -70,6 +70,7 @@ const Register = (props) => {
         iconPack={Ionicons}
         icon="person-outline"
         placeholder="Enter full name"
+        inputMode="text"
         id="fullName"
         onInputChanged={inputChangeHandler}
         errorText={formState.inputValidation["fullName"]}
@@ -79,6 +80,7 @@ const Register = (props) => {
         iconPack={Ionicons}
         icon="mail-outline"
         placeholder="Enter email"
+        inputMode="email"
         id="email"
         onInputChanged={inputChangeHandler}
         errorText={formState.inputValidation["email"]}

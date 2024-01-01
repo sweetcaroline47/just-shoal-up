@@ -5,6 +5,7 @@ import {
   View,
   Button,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import colors from "../../constants/colors";
 
@@ -13,6 +14,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 // import icons
 import { Ionicons } from "@expo/vector-icons";
+import shoalIcon from "../assets/images/icon-noBackground.png";
 
 // import screens
 import ChatListScreen from "../screens/ChatListScreen";
@@ -25,6 +27,8 @@ import { child, get, getDatabase, off, onValue, ref } from "firebase/database";
 import { setChatsData } from "../store/chatSlice";
 import { setStoredUsers } from "../store/userSlice";
 import { setChatMessages, setStarredMessages } from "../store/messagesSlice";
+import ContactScreen from "../screens/ContactScreen";
+import GroupContactScreen from "../screens/GroupContactScreen";
 
 // stack
 const Stack = createNativeStackNavigator();
@@ -34,17 +38,7 @@ const Tab = createBottomTabNavigator();
 // Tab Navigator
 // customize headerTitle style
 const CustomHeaderTitle = () => {
-  return (
-    <Text
-      style={{
-        fontFamily: "Poppins_black",
-        fontSize: 30,
-        color: colors.yellow,
-      }}
-    >
-      shoal
-    </Text>
-  );
+  return <Image source={shoalIcon} style={{ height: 80, width: 80 }} />;
 };
 
 const TabNavigator = () => {
@@ -53,17 +47,19 @@ const TabNavigator = () => {
       screenOptions={({ route }) => ({
         headerTitle: (props) => <CustomHeaderTitle {...props} />,
         headerTitle: (props) => <CustomHeaderTitle {...props} />,
-        headerStyle: { backgroundColor: "#FF9D7A" },
+        headerStyle: { backgroundColor: colors.pink_2 },
         headerShadowVisible: false,
         tabBarLabelStyle: { fontSize: 14, color: "#F75820" },
-        tabBarStyle: { backgroundColor: "#FF9D7A" },
+        tabBarStyle: { backgroundColor: colors.pink_2 },
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
           if (route.name === "ChatList") {
-            iconName = focused ? "chatbox-sharp" : "chatbox-outline";
+            iconName = focused
+              ? "chatbox-ellipses"
+              : "chatbox-ellipses-outline";
           } else if (route.name === "ChatSettings") {
-            iconName = focused ? "settings-sharp" : "settings-outline";
+            iconName = focused ? "person-circle" : "person-circle-outline";
           }
           return <Ionicons name={iconName} size={28} color={color} />;
         },
@@ -114,6 +110,7 @@ const StackNavigator = () => {
           component={TabNavigator}
           options={{
             headerShown: false,
+            headerShadowVisible: false,
           }}
         />
         <Stack.Screen
@@ -121,17 +118,29 @@ const StackNavigator = () => {
           component={ChatScreen}
           options={{
             headerTitle: "",
+            headerShadowVisible: false,
             headerBackTitle: "Back",
-            headerStyle: { backgroundColor: "#FF9D7A" },
+            headerStyle: { backgroundColor: colors.pink_2 },
           }}
         />
         <Stack.Screen
-          name="Chat Settings"
-          component={ChatSettingsScreen}
+          name="Group Contact"
+          component={GroupContactScreen}
           options={{
-            headerTitle: "Settings",
+            headerTitle: "",
+            headerShadowVisible: false,
             headerBackTitle: "Back",
-            headerStyle: { backgroundColor: "#FF9D7A" },
+            headerStyle: { backgroundColor: colors.pink_2 },
+          }}
+        />
+        <Stack.Screen
+          name="Contact"
+          component={ContactScreen}
+          options={{
+            headerTitle: "Contact Info",
+            headerShadowVisible: false,
+            headerBackTitle: "Back",
+            headerStyle: { backgroundColor: colors.pink_2 },
           }}
         />
       </Stack.Group>

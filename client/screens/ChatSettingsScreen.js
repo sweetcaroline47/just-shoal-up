@@ -79,7 +79,7 @@ const ChatSettingsScreen = (props) => {
       setShowSuccessMessage(true);
       setTimeout(() => {
         setShowSuccessMessage(false);
-      }, 5000);
+      }, 3000);
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -105,11 +105,11 @@ const ChatSettingsScreen = (props) => {
       >
         <ScrollView contentContainerStyle={styles.formContainer}>
           <PageTitle text="Profile" />
-          <ProfileImage 
-          size={80} 
-          userId={userData.userId} 
-          uri={userData.profilePicture}
-          showEditButton={true}
+          <ProfileImage
+            size={80}
+            userId={userData.userId}
+            uri={userData.profilePicture}
+            showEditButton={true}
           />
 
           <Input

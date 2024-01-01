@@ -4,7 +4,7 @@ import colors from "../../constants/colors";
 
 const SubmitButton = props => {
 
-    const enabledBackgroundColor = props.isLogOut ? colors.chinese_red : colors.orange;
+    const enabledBackgroundColor = props.isLogOut || props.isRemove ? colors.chinese_red : colors.orange;
     const disabledBackgroundColor = colors.chinese_grey;
     const backgroundColor = props.disabled ? disabledBackgroundColor : enabledBackgroundColor;
 

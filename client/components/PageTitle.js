@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     text: {
         fontSize: 26,
         color: colors.chinese_black,
-        fontFamily: "Poppins_semibolditalic",
+        fontFamily: "Poppins_semibold",
         letterSpacing: 0.3,
     },
 });

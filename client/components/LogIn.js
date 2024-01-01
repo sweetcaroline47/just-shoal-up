@@ -68,6 +68,7 @@ const LogIn = (props) => {
         iconPack={Ionicons}
         icon="mail-outline"
         placeholder="Enter email"
+        inputMode="email"
         id="email"
         onInputChanged={inputChangeHandler}
         errorText={formState.inputValidation["email"]}

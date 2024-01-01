@@ -1,5 +1,15 @@
-import { child, get, getDatabase, push, ref, remove, set, update } from "firebase/database";
+import {
+  child,
+  get,
+  getDatabase,
+  push,
+  ref,
+  remove,
+  set,
+  update,
+} from "firebase/database";
 import { Children } from "react";
+import { deleteUserChat, getUserChats } from "./userActions";
 
 export const createChat = async (loggedInUserId, chatData) => {
   const newChatData = {
@@ -19,23 +29,49 @@ export const createChat = async (loggedInUserId, chatData) => {
   return newChat.key;
 };
 
-export const sendTextMessage = async (chatId, senderId, messageText, replyTo) => {
+export const sendTextMessage = async (
+  chatId,
+  senderId,
+  messageText,
+  replyTo
+) => {
   sendMessage(chatId, senderId, messageText, null, replyTo);
-}
+};
 
-export const sendImage = async (chatId, senderId, messageText, imageUrl, replyTo) => {
+export const sendImage = async (
+  chatId,
+  senderId,
+  messageText,
+  imageUrl,
+  replyTo
+) => {
   // CY EDIT: instead of 'image' I kept messageText below
   messageText = messageText || "post to prove";
   sendMessage(chatId, senderId, messageText, imageUrl, replyTo);
-}
+};
 
-const sendMessage = async (chatId, senderId, messageText, imageUrl, replyTo) => {
+export const updateChatData = async (chatId, userId, chatData) => {
+  const dbRef = ref(getDatabase());
+  const chatRef = child(dbRef, `chats/${chatId}`);
+  await update(chatRef, {
+    ...chatData,
+    updatedAt: new Date().toISOString(),
+    updatedBy: userId,
+  });
+};
 
+const sendMessage = async (
+  chatId,
+  senderId,
+  messageText,
+  imageUrl,
+  replyTo
+) => {
   const dbRef = ref(getDatabase());
   const messagesRef = child(dbRef, `messages/${chatId}`);
   const messageData = {
     sentBy: senderId,
-    sentAt:  new Date().toISOString(),
+    sentAt: new Date().toISOString(),
     text: messageText,
   };
 
@@ -54,32 +90,54 @@ const sendMessage = async (chatId, senderId, messageText, imageUrl, replyTo) => 
     updatedBy: senderId,
     updatedAt: new Date().toISOString(),
     latestMessageText: messageText,
-  })
-
-}
+  });
+};
 
 export const starMessage = async (messageId, chatId, userId) => {
   try {
-      const dbRef = ref(getDatabase());
-      const childRef = child(dbRef, `userStarredMessages/${userId}/${chatId}/${messageId}`);
+    const dbRef = ref(getDatabase());
+    const childRef = child(
+      dbRef,
+      `userStarredMessages/${userId}/${chatId}/${messageId}`
+    );
 
-      const snapshot = await get(childRef);
+    const snapshot = await get(childRef);
 
-      if (snapshot.exists()) {
-          // Starred item exists - Un-star
-          await remove(childRef);
-      }
-      else {
-          // Starred item does not exist - star
-          const starredMessageData = {
-            messageId,
-            chatId,
-            starredAt: new Date().toISOString()
-        }
+    if (snapshot.exists()) {
+      // Starred item exists - Un-star
+      await remove(childRef);
+    } else {
+      // Starred item does not exist - star
+      const starredMessageData = {
+        messageId,
+        chatId,
+        starredAt: new Date().toISOString(),
+      };
 
-        await set(childRef, starredMessageData);
-      }
+      await set(childRef, starredMessageData);
+    }
   } catch (error) {
-      console.log(error);        
+    console.log(error);
+
   }
-}
+};
+
+export const removeUsersFromChat = async (
+  userLoggedInData,
+  userToRemoveData,
+  chatData
+) => {
+  const userToRemoveId = userToRemoveData.userId;
+  const newUsers = chatData.users.filter((uid) => uid !== userToRemoveId);
+  await updateChatData(chatData.key, userLoggedInData.userId, {
+    users: newUsers,
+  });
+  const userChats = await getUserChats(userToRemoveId);
+  for (const key in userChats) {
+    const currentChatId = userChats[key];
+    if (currentChatId === chatData.key) {
+      await deleteUserChat(userToRemoveData, key);
+      break;
+    }
+  }
+};

@@ -1,5 +1,12 @@
 import React, { useEffect } from "react";
-import { StyleSheet, Text, View, Button, FlatList } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Button,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
 import colors from "../../constants/colors";
 import { HeaderButtons, Item } from "react-navigation-header-buttons";
 import CustomHeaderButton from "../components/CustomHeaderButton";
@@ -10,6 +17,9 @@ import PageTitle from "../components/PageTitle";
 
 const ChatListScreen = (props) => {
   const selectedUser = props.route?.params?.selectedUserId;
+  const selectedUsers = props.route?.params?.selectedUsers;
+  const chatName = props.route?.params?.chatName;
+
   const userData = useSelector((state) => state.auth.userData);
   const storedUsers = useSelector((state) => state.users.storedUsers);
   const userChats = useSelector((state) => {
@@ -27,8 +37,8 @@ const ChatListScreen = (props) => {
           <HeaderButtons HeaderButtonComponent={CustomHeaderButton}>
             <Item
               title="New chat"
-              iconName="create"
-              color={colors.yellow}
+              iconName="create-outline"
+              color={colors.chinese_red}
               onPress={() => {
                 props.navigation.navigate("New Chat");
               }}
@@ -39,33 +49,80 @@ const ChatListScreen = (props) => {
     });
   }, []);
   useEffect(() => {
-    if (!selectedUser) {
+    if (!selectedUser && !selectedUsers) {
       return;
     }
-    const chatUsers = [selectedUser, userData.userId];
 
-    const navigationProps = {
-      newChatData: { users: chatUsers },
-    };
+    let chatData;
+    let navigationProps;
+
+    if (selectedUser) {
+      chatData = userChats.find(
+        (cd) => !cd.isGroupChat && cd.users.includes(selectedUser)
+      );
+    }
+    if (chatData) {
+      navigationProps = { chatId: chatData.key };
+    } else {
+      const chatUsers = selectedUsers || [selectedUser];
+      if (!chatUsers.includes(userData.userId)) {
+        chatUsers.push(userData.userId);
+      }
+
+      navigationProps = {
+        newChatData: {
+          users: chatUsers,
+          isGroupChat: selectedUsers !== undefined,
+          
+        },
+      };
+      if (chatName) {
+        navigationProps.newChatData.chatName = chatName;
+    }
+    }
+
     props.navigation.navigate("Chat Screen", navigationProps);
   }, [props.route?.params]);
 
   return (
     <PageContainer>
       <PageTitle text="Chats" />
+
+      <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+        <TouchableOpacity
+          onPress={() => {
+            props.navigation.navigate("New Chat", { isGroupChat: true });
+          }}
+        >
+          <Text style={styles.newGroupText}>New Group</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={userChats}
         renderItem={(itemData) => {
           const chatData = itemData.item;
           const chatId = chatData.key;
-          const otherUserId = chatData.users.find(
-            (uid) => uid !== userData.userId
-          );
-          const otherUser = storedUsers[otherUserId];
-          if (!otherUser) return;
-          const title = `${otherUser.fullName}`;
-          const subtitle = chatData.latestMessageText || "Say hi to your new friend :)";
-          const image = otherUser.profilePicture;
+          const isGroupChat = chatData.isGroupChat;
+
+          let title = "";
+          const subtitle =
+            chatData.latestMessageText || "Say hi to your new friend :)";
+          let image = "";
+
+          if (isGroupChat) {
+            title = chatData.chatName;
+            image = chatData.chatImage;
+          } else {
+            const otherUserId = chatData.users.find(
+              (uid) => uid !== userData.userId
+            );
+            const otherUser = storedUsers[otherUserId];
+            if (!otherUser) return;
+            title = `${otherUser.fullName}`;
+
+            image = otherUser.profilePicture;
+          }
 
           return (
             <DataItem
@@ -89,6 +146,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.pink_1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  newGroupText: {
+    fontFamily: "Poppins_semibold",
+    fontSize: 17,
+    color: colors.chinese_red,
+    marginBottom: 5,
   },
 });
 

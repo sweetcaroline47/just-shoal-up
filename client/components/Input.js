@@ -48,6 +48,7 @@ const Input = (props) => {
           <TextInput
             {...props}
             style={styles.textInput}
+            inputMode={props.inputMode}
             placeholder={props.placeholder}
             onChangeText={onChangeText}
             secureTextEntry={isPasswordInput ? !isPasswordVisible : false} // Toggle secureTextEntry based on visibility state

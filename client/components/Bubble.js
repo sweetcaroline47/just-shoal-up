@@ -116,6 +116,7 @@ const Bubble = (props) => {
       await Clipboard.setStringAsync(text);
     } catch (error) {
       console.log(error);
+      
     }
   };
 
@@ -251,6 +252,10 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_semibold",
     letterSpacing: 0.3,
     marginLeft: 5,
+    // CY EDIT: ADD PADDING UNDER NAME
+    marginBottom: 5,
+    fontSize: 14,
+    color: colors.orange,
 
   },
   image: {

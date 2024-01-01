@@ -37,7 +37,8 @@ const styles = StyleSheet.create({
     name: {
         color: colors.orange,
         fontFamily: 'Poppins_semibold',
-        letterSpacing: 0.3
+        letterSpacing: 0.3,
+        fontSize: 14,
     }
 });
 

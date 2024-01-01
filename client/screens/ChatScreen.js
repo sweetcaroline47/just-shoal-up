@@ -32,6 +32,8 @@ import {
   uploadImageAsync,
 } from "../utils/imagePickerHelper";
 import AwesomeAlert from "react-native-awesome-alerts";
+import { HeaderButtons, Item } from "react-navigation-header-buttons";
+import CustomHeaderButton from "../components/CustomHeaderButton";
 
 const ChatScreen = (props) => {
   const [chatUsers, setChatUsers] = useState([]);
@@ -74,18 +76,39 @@ const ChatScreen = (props) => {
     return otherUserData && `${otherUserData.fullName}`;
   };
 
+  const title = chatData.chatName ?? getChatTitleFromName();
+
   useEffect(() => {
     props.navigation.setOptions({
-      headerTitle: getChatTitleFromName(),
+      headerTitle: title,
+
+      headerRight: () => {
+        return (
+          <HeaderButtons HeaderButtonComponent={CustomHeaderButton}>
+            {chatId && (
+              <Item
+                title="Contacts"
+                iconName="happy-outline"
+                color={colors.chinese_red}
+                onPress={() =>
+                  chatData.isGroupChat
+                    ? props.navigation.navigate("Group Contact", {chatId: chatId})
+                    : props.navigation.navigate("Contact", {uid: chatUsers.find((uid) => uid !== userData.userId)})
+                }
+              />
+            )}
+          </HeaderButtons>
+        );
+      },
+
       headerTitleStyle: {
         fontFamily: "Poppins_semibold",
         color: colors.chinese_black,
         letterSpacing: 0.3,
       },
     });
-
     setChatUsers(chatData.users);
-  }, [chatUsers]);
+  }, [chatUsers, title]);
 
   // send message in 1-1 chat
   const sendMessage = useCallback(async () => {
@@ -162,13 +185,14 @@ const ChatScreen = (props) => {
         uploadUrl,
         replyingTo && replyingTo.key
       );
-
+      // CY EDIT: CLEAR THE TEXTBOX AFTER SENDING AN IMAGE
+      setMessageText("");
       setTempImageUri("");
     } catch (error) {
       console.log(error);
       setIsLoadning(false);
     }
-  }, [isLoading, tempImageUri]);
+  }, [isLoading, tempImageUri, chatId]);
 
   return (
     <SafeAreaView edges={["right", "left", "bottom"]} style={styles.container}>
@@ -188,9 +212,13 @@ const ChatScreen = (props) => {
             )}
             {chatId && (
               <FlatList
-                ref={(ref) => flatList.current = ref }
-                onContentSizeChange={()=> flatList.current.scrollToEnd({ animated: false })}
-                onLayout={()=> flatList.current.scrollToEnd({ animated: false })}
+                ref={(ref) => (flatList.current = ref)}
+                onContentSizeChange={() =>
+                  flatList.current.scrollToEnd({ animated: false })
+                }
+                onLayout={() =>
+                  flatList.current.scrollToEnd({ animated: false })
+                }
                 data={chatMessages}
                 renderItem={(itemData) => {
                   const message = itemData.item;
@@ -198,6 +226,9 @@ const ChatScreen = (props) => {
                   const messageType = isOwnMessage
                     ? "myMessage"
                     : "theirMessage";
+
+                  const sender = message.sentBy && storedUsers[message.sentBy];
+                  const name = sender && `${sender.fullName}`;
                   return (
                     <Bubble
                       type={messageType}
@@ -206,6 +237,9 @@ const ChatScreen = (props) => {
                       userId={userData.userId}
                       chatId={chatId}
                       date={message.sentAt}
+                      name={
+                        !chatData.isGroupChat || isOwnMessage ? undefined : name
+                      }
                       setReply={() => setReplyingTo(message)}
                       replyingTo={
                         message.replyTo &&
@@ -246,15 +280,13 @@ const ChatScreen = (props) => {
             textAlignVertical={"auto"}
           />
 
-          {messageText === "" && (
-            <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
-              <Ionicons
-                name="md-camera-outline"
-                size={32}
-                color={colors.orange}
-              />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
+            <Ionicons
+              name="md-camera-outline"
+              size={32}
+              color={colors.orange}
+            />
+          </TouchableOpacity>
 
           {messageText !== "" && (
             <TouchableOpacity
@@ -337,8 +369,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     borderColor: colors.pink_2,
-    marginHorizontal: 15,
-    paddingHorizontal: 12,
+    marginLeft: 0,
+    marginRight: 10,
+    paddingHorizontal: 10,
     flexDirection: "row",
     fontSize: 16,
     fontFamily: "Poppins_regular",
@@ -348,6 +381,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: 35,
+    marginRight: 5,
   },
   popupButtonStyle: {
     width: 70,

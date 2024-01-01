@@ -50,7 +50,7 @@ const AuthScreen = (props) => {
                   color: colors.chinese_black,
                   letterSpacing: 0.3,
                 }}
-              >{`Switch to ${isRegistered ? "regiester" : "sign in"}`}</Text>
+              >{`Switch to ${isRegistered ? "register" : "sign in"}`}</Text>
             </TouchableOpacity>
           </KeyboardAvoidingView>
         </ScrollView>
