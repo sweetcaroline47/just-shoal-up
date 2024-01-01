@@ -79,7 +79,7 @@ const ContactScreen = (props) => {
               <DataItem
                 key={cd}
                 title={chatData.chatName}
-                subTitle={chatData.latestMessageText}
+                subtitle={chatData.latestMessageText}
                 type="link"
                 onPress={() =>
                   props.navigation.push("Chat Screen", { chatId: cd })

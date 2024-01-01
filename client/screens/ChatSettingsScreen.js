@@ -1,4 +1,4 @@
-import React, { useCallback, useReducer, useState } from "react";
+import React, { useCallback, useMemo, useReducer, useState } from "react";
 import PageContainer from "../components/PageContainer";
 import PageTitle from "../components/PageTitle";
 import Input from "../components/Input";
@@ -23,11 +23,32 @@ import {
 } from "../utils/actions/authActions";
 import { updateExistingUserData } from "../store/authSlice";
 import ProfileImage from "../components/ProfileImage";
+import DataItem from "../components/DataItem";
 
 const ChatSettingsScreen = (props) => {
   const dispatch = useDispatch();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const userData = useSelector((state) => state.auth.userData);
+
+  // star messages
+  const starredMessages = useSelector(
+    (state) => state.messages.starredMessages ?? {}
+  );
+
+  const sortedStarredMessages = useMemo(() => {
+    let result = [];
+
+    const chats = Object.values(starredMessages);
+
+    chats.forEach((chat) => {
+      const chatMessages = Object.values(chat);
+      result = result.concat(chatMessages);
+    });
+
+    return result;
+  }, [starredMessages]);
 
   const fullName = userData.fullName || "";
   const email = userData.email || "";
@@ -56,9 +77,6 @@ const ChatSettingsScreen = (props) => {
     },
     formIsValid: false,
   };
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const [formState, dispatchFormState] = useReducer(reducer, initialState);
 
@@ -233,6 +251,20 @@ const ChatSettingsScreen = (props) => {
               )
             )}
           </View>
+
+          <DataItem
+            type={"link"}
+            title="Starred messages"
+            hideImage={true}
+            onPress={() =>
+              props.navigation.navigate("DataList", {
+                title: "Starred messages",
+                data: sortedStarredMessages,
+                type: "messages",
+              })
+            }
+          />
+
           <SubmitButton
             title="Log out"
             onPress={() => dispatch(userLogout())}

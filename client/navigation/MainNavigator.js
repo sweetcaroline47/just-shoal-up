@@ -29,6 +29,7 @@ import { setStoredUsers } from "../store/userSlice";
 import { setChatMessages, setStarredMessages } from "../store/messagesSlice";
 import ContactScreen from "../screens/ContactScreen";
 import GroupContactScreen from "../screens/GroupContactScreen";
+import DataListScreen from "../screens/DataListScreen";
 
 // stack
 const Stack = createNativeStackNavigator();
@@ -143,6 +144,16 @@ const StackNavigator = () => {
             headerStyle: { backgroundColor: colors.pink_2 },
           }}
         />
+        <Stack.Screen
+          name="DataList"
+          component={DataListScreen}
+          options={{
+            headerTitle: "",
+            headerShadowVisible: false,
+            headerBackTitle: "Back",
+            headerStyle: { backgroundColor: colors.pink_2 },
+          }}
+        />
       </Stack.Group>
       <Stack.Group screenOptions={{ presentation: "modal" }}>
         <Stack.Screen name="New Chat" component={NewChatScreen} />
@@ -180,6 +191,9 @@ const MainNavigator = (props) => {
           chatsFoundCount++;
           const data = chatSnapshot.val();
           if (data) {
+            if (!data.users.includes(userData.userId)) {
+              return;
+            }
             data.key = chatSnapshot.key;
             data.users.forEach((userId) => {
               if (storedUsers[userId]) return;

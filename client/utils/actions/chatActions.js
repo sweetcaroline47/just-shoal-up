@@ -9,7 +9,7 @@ import {
   update,
 } from "firebase/database";
 import { Children } from "react";
-import { deleteUserChat, getUserChats } from "./userActions";
+import { addUserChat, deleteUserChat, getUserChats } from "./userActions";
 
 export const createChat = async (loggedInUserId, chatData) => {
   const newChatData = {
@@ -35,7 +35,11 @@ export const sendTextMessage = async (
   messageText,
   replyTo
 ) => {
-  sendMessage(chatId, senderId, messageText, null, replyTo);
+  sendMessage(chatId, senderId, messageText, null, replyTo, null);
+};
+
+export const sendInfoMessage = async (chatId, senderId, messageText) => {
+  sendMessage(chatId, senderId, messageText, null, null, "info");
 };
 
 export const sendImage = async (
@@ -47,7 +51,7 @@ export const sendImage = async (
 ) => {
   // CY EDIT: instead of 'image' I kept messageText below
   messageText = messageText || "post to prove";
-  sendMessage(chatId, senderId, messageText, imageUrl, replyTo);
+  sendMessage(chatId, senderId, messageText, imageUrl, replyTo, null);
 };
 
 export const updateChatData = async (chatId, userId, chatData) => {
@@ -65,7 +69,8 @@ const sendMessage = async (
   senderId,
   messageText,
   imageUrl,
-  replyTo
+  replyTo,
+  type
 ) => {
   const dbRef = ref(getDatabase());
   const messagesRef = child(dbRef, `messages/${chatId}`);
@@ -81,6 +86,10 @@ const sendMessage = async (
 
   if (imageUrl) {
     messageData.imageUrl = imageUrl;
+  }
+
+  if (type) {
+    messageData.type = type;
   }
 
   await push(messagesRef, messageData);
@@ -142,4 +151,52 @@ export const removeUserFromChat = async (
       break;
     }
   }
+
+  const messageText =
+    userLoggedInData.userId === userToRemoveData.userId
+      ? `${userLoggedInData.fullName} left`
+      : `${userLoggedInData.fullName} removed ${userToRemoveData.fullName}`;
+
+  await sendInfoMessage(chatData.key, userLoggedInData.userId, messageText);
+};
+
+export const addUsersToChat = async (
+  userLoggedInData,
+  usersToAddData,
+  chatData
+) => {
+  const existingUsers = Object.values(chatData.users);
+  const newUsers = [];
+
+  let userAddedName = "";
+
+  usersToAddData.forEach(async (userToAdd) => {
+    const userToAddId = userToAdd.userId;
+
+    if (existingUsers.includes(userToAddId)) return;
+
+    newUsers.push(userToAddId);
+
+    await addUserChat(userToAddId, chatData.key);
+
+    userAddedName = `${userToAdd.fullName}`;
+  });
+
+  if (newUsers.length === 0) {
+    return;
+  }
+
+  await updateChatData(chatData.key, userLoggedInData.userId, {
+    users: existingUsers.concat(newUsers),
+  });
+
+  const moreUsersMessage =
+    newUsers.length === 1
+      ? ""
+      : newUsers.length === 2
+      ? `and 1 other`
+      : `and ${newUsers.length - 1} others`;
+
+  const messageText = `${userLoggedInData.fullName} added ${userAddedName} ${moreUsersMessage}`;
+  await sendInfoMessage(chatData.key, userLoggedInData.userId, messageText);
 };

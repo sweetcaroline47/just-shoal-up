@@ -4,6 +4,7 @@ import {
   get,
   getDatabase,
   orderByChild,
+  push,
   query,
   ref,
   remove,
@@ -45,6 +46,18 @@ export const deleteUserChat = async (userId, key) => {
     throw error;
   }
 };
+
+export const addUserChat = async (userId, chatId) => {
+  try {
+      const dbRef = ref(getDatabase());
+      const chatRef = child(dbRef, `userChats/${userId}`);
+
+      await push(chatRef, chatId);
+  } catch (error) {
+      console.log(error);
+      throw error;
+  }
+}
 
 export const searchUsers = async (queryText) => {
   const searchTerm = queryText.toLowerCase();

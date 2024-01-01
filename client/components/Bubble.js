@@ -1,5 +1,11 @@
 import React, { useRef } from "react";
-import { StyleSheet, Text, TouchableWithoutFeedback, View, Image } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+  Image,
+} from "react-native";
 import colors from "../../constants/colors";
 import {
   Menu,
@@ -69,12 +75,14 @@ const Bubble = (props) => {
   switch (type) {
     case "system":
       textStyle.color = colors.light_orange;
+      textStyle.fontSize = 12;
       bubbleStyle.alignItems = "center";
       bubbleStyle.marginTop = 10;
       break;
 
     case "error":
       textStyle.color = colors.chinese_red;
+      textStyle.fontSize = 12;
       bubbleStyle.alignItems = "center";
       bubbleStyle.marginTop = 10;
       break;
@@ -99,12 +107,21 @@ const Bubble = (props) => {
       wrapperStyle.justifyContent = "flex-start";
       bubbleStyle.backgroundColor = colors.pink_1;
       bubbleStyle.alignItems = "flext-start";
-
       bubbleStyle.marginTop = 10;
       bubbleStyle.marginBottom = 10;
+      textStyle.fontSize = 14;
+      
 
       Container = TouchableWithoutFeedback;
       isUserMessage = true;
+      break;
+
+    case "info":
+      textStyle.color = colors.chinese_black;
+      textStyle.fontSize = 12;
+      
+      bubbleStyle.alignItems = "center";
+      bubbleStyle.marginTop = 10;
       break;
 
     default:
@@ -116,7 +133,6 @@ const Bubble = (props) => {
       await Clipboard.setStringAsync(text);
     } catch (error) {
       console.log(error);
-      
     }
   };
 
@@ -132,7 +148,7 @@ const Bubble = (props) => {
         style={{ width: "auto" }}
       >
         <View style={bubbleStyle}>
-          {name && <Text style={styles.name}>{name}</Text>}
+          {name && type !== "info" && <Text style={styles.name}>{name}</Text>}
 
           {replyingToUser && (
             <Bubble
@@ -141,16 +157,12 @@ const Bubble = (props) => {
               name={`${replyingToUser.fullName}`}
             />
           )}
-          {
-            imageUrl &&
-            <Image 
-            source={{uri: imageUrl}}
-            style={styles.image}
-            />
-          }
-           <Text style={textStyle}>{text}</Text>
+          {imageUrl && (
+            <Image source={{ uri: imageUrl }} style={styles.image} />
+          )}
+          <Text style={textStyle}>{text}</Text>
 
-          {dateString && isUserMessage && (
+          {dateString && isUserMessage && type !== "info" && (
             <View style={styles.timeContainer}>
               {isStarred && (
                 <Ionicons
@@ -256,13 +268,12 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     fontSize: 14,
     color: colors.orange,
-
   },
   image: {
     width: 200,
     height: 200,
     marginBottom: 5,
-  }
+  },
 });
 
 export default Bubble;
