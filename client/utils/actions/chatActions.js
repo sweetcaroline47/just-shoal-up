@@ -118,11 +118,10 @@ export const starMessage = async (messageId, chatId, userId) => {
     }
   } catch (error) {
     console.log(error);
-
   }
 };
 
-export const removeUsersFromChat = async (
+export const removeUserFromChat = async (
   userLoggedInData,
   userToRemoveData,
   chatData
@@ -132,11 +131,14 @@ export const removeUsersFromChat = async (
   await updateChatData(chatData.key, userLoggedInData.userId, {
     users: newUsers,
   });
+
   const userChats = await getUserChats(userToRemoveId);
+
   for (const key in userChats) {
     const currentChatId = userChats[key];
+
     if (currentChatId === chatData.key) {
-      await deleteUserChat(userToRemoveData, key);
+      await deleteUserChat(userToRemoveId, key);
       break;
     }
   }

@@ -8,6 +8,7 @@ import ProfileImage from "../components/ProfileImage";
 import colors from "../../constants/colors";
 import { getUserChats } from "../utils/actions/userActions";
 import SubmitButton from "../components/SubmitButton";
+import { removeUserFromChat } from "../utils/actions/chatActions";
 
 const ContactScreen = (props) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,13 +38,14 @@ const ContactScreen = (props) => {
   const removeFromChat = useCallback(async () => {
     try {
       setIsLoading(true);
-      // remove user
-      await removeFromChat(userData, currentUser, chatData);
+
+      await removeUserFromChat(userData, currentUser, chatData);
 
       props.navigation.goBack();
-      setIsLoading(false);
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   }, [props.navigation, isLoading]);
 
@@ -80,7 +82,7 @@ const ContactScreen = (props) => {
                 subTitle={chatData.latestMessageText}
                 type="link"
                 onPress={() =>
-                  props.navigation.push("ChatScreen", { chatId: cd })
+                  props.navigation.push("Chat Screen", { chatId: cd })
                 }
                 image={chatData.chatImage}
               />
@@ -89,18 +91,18 @@ const ContactScreen = (props) => {
         </>
       )}
 
-      {chatData &&
-        chatData.isGroupChat &&
-        isLoading ? 
-          <ActivityIndicator size={"small"} color={colors.orange} />
-         : 
-          <SubmitButton
-            title="Remove"
-            style={{ marginTop: 20 }}
-            isRemove
-            onPress={removeFromChat}
-          />
-        }
+      {chatData && chatData.isGroupChat && 
+      (isLoading ? (
+        <ActivityIndicator size={"small"} color={colors.orange} />
+      ) : (
+        <SubmitButton
+          title="Remove"
+          style={{ marginTop: 20 }}
+          isRemove
+          onPress={removeFromChat}
+        />
+      ))
+      }
     </PageContainer>
   );
 };
